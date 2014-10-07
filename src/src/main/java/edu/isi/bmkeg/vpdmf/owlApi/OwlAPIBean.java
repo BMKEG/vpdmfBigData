@@ -1,0 +1,250 @@
+package edu.isi.bmkeg.vpdmf.owlApi;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
+import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.AddImport;
+import org.semanticweb.owlapi.model.ClassExpressionType;
+import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLAnnotation;
+import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
+import org.semanticweb.owlapi.model.OWLAnnotationProperty;
+import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
+import org.semanticweb.owlapi.model.OWLClassExpression;
+import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLImportsDeclaration;
+import org.semanticweb.owlapi.model.OWLIndividual;
+import org.semanticweb.owlapi.model.OWLLiteral;
+import org.semanticweb.owlapi.model.OWLNamedIndividual;
+import org.semanticweb.owlapi.model.OWLObjectAllValuesFrom;
+import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
+import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
+import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
+import org.semanticweb.owlapi.model.OWLObjectUnionOf;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.semanticweb.owlapi.model.PrefixManager;
+import org.semanticweb.owlapi.util.DefaultPrefixManager;
+import org.semanticweb.owlapi.util.OWLOntologyWalker;
+import org.semanticweb.owlapi.util.OWLOntologyWalkerVisitor;
+import org.semanticweb.owlapi.util.SimpleIRIMapper;
+import org.semanticweb.owlapi.vocab.OWLRDFVocabulary;
+
+import edu.isi.bmkeg.uml.model.UMLmodel;
+
+public class OwlAPIBean {
+
+	private OWLOntologyManager manager;
+	private OWLDataFactory factory;
+
+	private PrefixManager pm;
+	private PrefixManager rdfsPm;
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	/**
+	 * Sets up a OwlAPI store for use within Spring.
+	 */
+	public OwlAPIBean() throws Exception {
+
+		manager = OWLManager.createOWLOntologyManager();
+		factory = manager.getOWLDataFactory();
+	}
+
+	public IRI addMapping(String iri, String resource) {
+
+		IRI ontologyIRI = IRI.create(iri);
+		IRI resourceIRI = IRI.create("file:" + resource);
+
+		SimpleIRIMapper mapper = new SimpleIRIMapper(ontologyIRI, resourceIRI);
+
+		manager.addIRIMapper(mapper);
+
+		return ontologyIRI;
+
+	}
+
+	public OWLOntology loadOntology(String uri, String resource)
+			throws Exception {
+
+		IRI iri = this.addMapping(uri, resource);
+		OWLOntology o = null;
+
+		File f = new File(resource);
+		if( f.exists() )
+			o = this.manager.loadOntology(iri);
+		else 
+			o = manager.createOntology(iri);
+		
+		return o;
+
+	}
+
+	public String makeIdString(String stem, int length, int value) {
+		
+		char c = '0';
+
+		String valueStr = "" + value;
+
+		char[] chars = new char[length - valueStr.length()];
+		Arrays.fill(chars, c);
+
+		return stem + String.valueOf(chars) + valueStr;
+
+	}
+
+	public void addSubClassToClass(String cStr, String scStr, OWLOntology o)
+			throws Exception {
+
+		String prefix = pm.getDefaultPrefix();
+		cStr = cStr.replaceAll(prefix, "");
+		scStr = scStr.replaceAll(prefix, "");
+
+		OWLClass c = factory.getOWLClass(":" + cStr, pm);
+		OWLClass sc = factory.getOWLClass(":" + scStr, pm);
+		OWLAxiom a = factory.getOWLSubClassOfAxiom(sc, c);
+		manager.addAxiom(o, a);
+
+	}
+
+	public void addIndividualToClass(String cStr, String iStr, OWLOntology o)
+			throws Exception {
+
+		String prefix = pm.getDefaultPrefix();
+		cStr = cStr.replaceAll(prefix, "");
+		iStr = iStr.replaceAll(prefix, "");
+
+		OWLClass c = factory.getOWLClass(":" + cStr, pm);
+		OWLNamedIndividual i = factory.getOWLNamedIndividual(":" + iStr, pm);
+		OWLClassAssertionAxiom a = factory.getOWLClassAssertionAxiom(c, i);
+		manager.addAxiom(o, a);
+
+	}
+
+	public void addRelation(String relStr, String i1Str, String i2Str,
+			OWLOntology o) throws Exception {
+
+		OWLObjectProperty prop = factory.getOWLObjectProperty(IRI
+				.create(relStr));
+		OWLIndividual individual = factory.getOWLNamedIndividual(IRI
+				.create(i1Str));
+		OWLIndividual object = factory.getOWLNamedIndividual(IRI.create(i2Str));
+
+		OWLObjectPropertyAssertionAxiom ax = factory
+				.getOWLObjectPropertyAssertionAxiom(prop, individual, object);
+
+		manager.addAxiom(o, ax);
+
+	}
+
+	public void addNameComment(String iStr, String name, OWLOntology o)
+			throws Exception {
+		
+		IRI i = IRI.create(iStr);
+		OWLLiteral n = factory.getOWLLiteral(name, "en");
+
+		OWLAnnotationProperty p = factory
+				.getOWLAnnotationProperty(OWLRDFVocabulary.RDFS_LABEL.getIRI());
+
+		OWLAnnotation ann = factory.getOWLAnnotation(p, n);
+		OWLAnnotationAssertionAxiom ax = factory
+				.getOWLAnnotationAssertionAxiom(i, ann);
+
+		manager.addAxiom(o, ax);
+
+	}
+
+	public void setPrefix(String prefixUri) {
+
+		this.pm = new DefaultPrefixManager(prefixUri);
+
+	}
+
+	public void ImportOntology1IntoOntology2(OWLOntology o1, OWLOntology o2)
+			throws Exception {
+
+		IRI o1_iri = o1.getOntologyID().getOntologyIRI();
+		OWLImportsDeclaration imp = factory.getOWLImportsDeclaration(o1_iri);
+		manager.applyChange(new AddImport(o2, imp));
+
+	}
+
+	public void saveOntology(OWLOntology o) throws Exception {
+
+		this.manager.saveOntology(o);
+
+	}
+	
+	public static String readLabel(Set<OWLAnnotationAssertionAxiom> axSet) {
+		
+		String label = null;
+		Iterator<OWLAnnotationAssertionAxiom> lIt = axSet.iterator();
+		while(lIt.hasNext()) {
+			OWLAnnotationAssertionAxiom l = lIt.next();
+			if(l.getProperty().isLabel()) {
+				label = ((OWLLiteral) l.getValue()).getLiteral();
+				break;
+			}
+		}
+		
+		return label;
+
+	}
+	
+	/*
+	 * 
+	 * File owlFile = new File(resource);
+	 * 
+	 * ontology = manager.loadOntologyFromOntologyDocument(owlFile);
+	 * 
+	 * // Set up a mapping, which maps the ontology to the document IRI
+	 * manager.addIRIMapper(mapper);
+	 * 
+	 * 
+	 * 
+	 * // Now create the ontology - we use the ontology IRI (not the physical
+	 * URI) OWLOntology ontology = manager.createOntology(ontologyIRI); // Now
+	 * we want to specify that A is a subclass of B. To do this, we add a
+	 * subclass // axiom. A subclass axiom is simply an object that specifies
+	 * that one class is a // subclass of another class. // We need a data
+	 * factory to create various object from. Each manager has a reference // to
+	 * a data factory that we can use. OWLDataFactory factory =
+	 * manager.getOWLDataFactory(); // Get hold of references to class A and
+	 * class B. Note that the ontology does not // contain class A or classB, we
+	 * simply get references to objects from a data factory that represent //
+	 * class A and class B OWLClass clsA =
+	 * factory.getOWLClass(IRI.create(ontologyIRI + "#A")); OWLClass clsB =
+	 * factory.getOWLClass(IRI.create(ontologyIRI + "#B")); // Now create the
+	 * axiom OWLAxiom axiom = factory.getOWLSubClassOfAxiom(clsA, clsB); // We
+	 * now add the axiom to the ontology, so that the ontology states that // A
+	 * is a subclass of B. To do this we create an AddAxiom change object. // At
+	 * this stage neither classes A or B, or the axiom are contained in the
+	 * ontology. We have to // add the axiom to the ontology. AddAxiom addAxiom
+	 * = new AddAxiom(ontology, axiom); // We now use the manager to apply the
+	 * change manager.applyChange(addAxiom);
+	 * 
+	 * // The ontology will now contain references to class A and class B - that
+	 * is, class A and class B // are contained within the SIGNATURE of the
+	 * ontology let's print them out for (OWLClass cls :
+	 * ontology.getClassesInSignature()) {
+	 * System.out.println("Referenced class: " + cls); } // We should also find
+	 * that B is an ASSERTED superclass of A Set<OWLClassExpression>
+	 * superClasses = clsA.getSuperClasses(ontology);
+	 * System.out.println("Asserted superclasses of " + clsA + ":"); for
+	 * (OWLClassExpression desc : superClasses) { System.out.println(desc); }
+	 * 
+	 * // Now save the ontology. The ontology will be saved to the location
+	 * where // we loaded it from, in the default ontology format
+	 * manager.saveOntology(ontology);
+	 */
+
+}

@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/repository/!svn/ver/2186/code/kefed/trunk/kefedWebapp/src/main/java/edu/isi/bmkeg/utils/bigdata
+END
+LUBM.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/repository/!svn/ver/2186/code/kefed/trunk/kefedWebapp/src/main/java/edu/isi/bmkeg/utils/bigdata/LUBM.java
+END
+BigDataBean.java
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/repository/!svn/ver/2186/code/kefed/trunk/kefedWebapp/src/main/java/edu/isi/bmkeg/utils/bigdata/BigDataBean.java
+END
+TestBaseball.java
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/repository/!svn/ver/2186/code/kefed/trunk/kefedWebapp/src/main/java/edu/isi/bmkeg/utils/bigdata/TestBaseball.java
+END
+BigDataUtilities.java
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/svn/repository/!svn/ver/2186/code/kefed/trunk/kefedWebapp/src/main/java/edu/isi/bmkeg/utils/bigdata/BigDataUtilities.java
+END
+SparqlBuilder.java
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/repository/!svn/ver/2186/code/kefed/trunk/kefedWebapp/src/main/java/edu/isi/bmkeg/utils/bigdata/SparqlBuilder.java
+END
+SampleCode.java
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/repository/!svn/ver/2186/code/kefed/trunk/kefedWebapp/src/main/java/edu/isi/bmkeg/utils/bigdata/SampleCode.java
+END
